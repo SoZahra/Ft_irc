@@ -230,35 +230,50 @@ UserCommand::UserCommand(Server* server)
  */
 void UserCommand::execute(Client* client, const std::vector<std::string>& params)
 {
-    // Vérifier que le client n'est pas déjà enregistré
-    if (client->isRegistered())
-    {
-        // Client déjà enregistré
-        client->sendReply("462 :You may not reregister");
-        return;
-    }
+	// Vérifier que le client n'est pas déjà enregistré
+	if (client->isRegistered())
+	{
+		// Client déjà enregistré
+		client->sendReply("462 :You may not reregister");
+		return;
+	}
 
-    // Récupérer les paramètres
-    std::string username = params[0];
-    // params[1] et params[2] sont ignorés
-    std::string realname = params[3];
+	std::string username = params[0];
+	// std::string realname = params[3];
 
-    // Définir le nom d'utilisateur et le nom réel
-    client->setUsername(username);
-    client->setRealname(realname);
+	std::string realname;
+	if(params.size() > 3)
+	{
+		realname = params[3];
+		if(realname.size() > 1 && realname[0] == ':' && params.size() > 4)
+		{
+			realname = realname.substr(1);
+			for(size_t i = 4; i < params.size(); ++i){
+				realname += " " + params[i];
+			}
+		}
+		else if (realname.size() > 0 && realname[0] == ':')
+		{
+			realname = "Anonymous";
+		}
+	}
+	else{
+		realname = "Anonymous";
+	}
 
-    // Si le client a envoyé le mot de passe et son pseudo, il est maintenant enregistré
-    if (client->getStatus() == PASSWORD_SENT && !client->getNickname().empty())
-    {
-        client->setStatus(REGISTERED);
 
-        // Envoyer les messages de bienvenue
-        NickCommand nickCmd(_server);
-        nickCmd.sendWelcomeMessages(client);
-    }
+	// Définir le nom d'utilisateur et le nom réel
+	client->setUsername(username);
+	client->setRealname(realname);
 
-    // Log d'enregistrement
-    Utils::logMessage("Client " + Utils::toString(client->getFd()) + " a défini son nom d'utilisateur à " + username + " et son nom réel à " + realname);
+	// Si le client a envoyé le mot de passe et son pseudo, il est maintenant enregistré
+	if (client->getStatus() == PASSWORD_SENT && !client->getNickname().empty())
+	{
+		client->setStatus(REGISTERED);
+		NickCommand nickCmd(_server);
+		nickCmd.sendWelcomeMessages(client);
+	}
+	Utils::logMessage("Client " + Utils::toString(client->getFd()) + " a défini son nom d'utilisateur à " + username + " et son nom réel à " + realname);
 }
 
 // Implémentation de la commande QUIT
