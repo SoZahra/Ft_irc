@@ -466,10 +466,11 @@ void PartCommand::execute(Client* client, const std::vector<std::string>& params
 
     // Récupérer le message de départ (optionnel)
     std::string partMessage = params.size() > 1 ? params[1] : "Leaving";
+	if(!partMessage.empty() && partMessage[0] == ':')
+		partMessage = partMessage.substr(1); // Enlever le ':' au début du message
 
     // Rechercher le canal
     Channel* channel = _server->getChannel(channelName);
-
     // Vérifier si le canal existe
     if (channel == NULL)
     {
@@ -477,7 +478,6 @@ void PartCommand::execute(Client* client, const std::vector<std::string>& params
         client->sendReply("403 " + channelName + " :No such channel");
         return;
     }
-
     // Vérifier si le client est dans le canal
     if (!channel->hasClient(client))
     {
@@ -500,7 +500,7 @@ void PartCommand::execute(Client* client, const std::vector<std::string>& params
     }
 
     // Log de départ de canal
-    Utils::logMessage("Client " + client->getNickname() + " a quitté le canal " + channelName + ": " + partMessage);
+    Utils::logMessage("Client " + client->getNickname() + " a quitté le canal " + channelName);
 }
 
 // Implémentation de la commande PRIVMSG

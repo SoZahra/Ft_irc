@@ -84,54 +84,43 @@ void CommandHandler::registerCommands()
  */
 std::vector<std::string> CommandHandler::parseParams(const std::string& paramsStr)
 {
-    // Vecteur des paramètres
-    std::vector<std::string> params;
+	// Vecteur des paramètres
+	std::vector<std::string> params;
+	// Si la chaîne est vide, retourner un vecteur vide
+	if (paramsStr.empty())
+		return params;
+	// Position actuelle dans la chaîne
+	size_t pos = 0;
+	// Tant qu'on n'a pas atteint la fin de la chaîne
+	while (pos < paramsStr.size())
+	{
+		// Si on trouve un caractère ':' au début d'un paramètre, tout le reste est un seul paramètre
+		if (paramsStr[pos] == ':')
+		{
+			params.push_back(paramsStr.substr(pos + 1));
+			break;
+		}
+		// Ignorer les espaces
+		while (pos < paramsStr.size() && isspace(paramsStr[pos]))
+		{
+			pos++;
+		}
+		// Si on a atteint la fin de la chaîne, sortir
+		if (pos >= paramsStr.size())
+		{
+			break;
+		}
+		// Début du paramètre
+		size_t start = pos;
+		while (pos < paramsStr.size() && !isspace(paramsStr[pos]))
+		{
+			pos++;
+		}
+		// Ajouter le paramètre au vecteur
+		params.push_back(paramsStr.substr(start, pos - start));
+	}
 
-    // Si la chaîne est vide, retourner un vecteur vide
-    if (paramsStr.empty())
-    {
-        return params;
-    }
-
-    // Position actuelle dans la chaîne
-    size_t pos = 0;
-
-    // Tant qu'on n'a pas atteint la fin de la chaîne
-    while (pos < paramsStr.size())
-    {
-        // Si on trouve un caractère ':' au début d'un paramètre, tout le reste est un seul paramètre
-        if (paramsStr[pos] == ':')
-        {
-            params.push_back(paramsStr.substr(pos + 1));
-            break;
-        }
-
-        // Ignorer les espaces
-        while (pos < paramsStr.size() && isspace(paramsStr[pos]))
-        {
-            pos++;
-        }
-
-        // Si on a atteint la fin de la chaîne, sortir
-        if (pos >= paramsStr.size())
-        {
-            break;
-        }
-
-        // Début du paramètre
-        size_t start = pos;
-
-        // Avancer jusqu'au prochain espace
-        while (pos < paramsStr.size() && !isspace(paramsStr[pos]))
-        {
-            pos++;
-        }
-
-        // Ajouter le paramètre au vecteur
-        params.push_back(paramsStr.substr(start, pos - start));
-    }
-
-    return params;
+	return params;
 }
 
 /**

@@ -406,9 +406,12 @@ void Server::handleClientMessage(int clientFd){
 	std::string clientBuffer = client->getBuffer();	// Obtenir le buffer du client
 	size_t pos;
 	while((pos = clientBuffer.find("\r\n")) != std::string::npos ||
-		(pos = clientBuffer.find("\n") != std::string::npos)){
+		(pos = clientBuffer.find("\n")) != std::string::npos){
 			std::string message = clientBuffer.substr(0, pos);	// Extraire le message
-			clientBuffer = clientBuffer.substr(pos +  (clientBuffer[pos] == '\r' ? 2 : 1));	// Mettre à jour le buffer du client
+			message = Utils::trim(message);	// gestion espaces
+
+			size_t nextPos = (clientBuffer[pos] == '\r' && pos + 1 < clientBuffer.size() && clientBuffer[pos + 1] == '\n') ? pos + 2 : pos + 1;
+			clientBuffer = clientBuffer.substr(nextPos);	// Mettre à jour le buffer du client
 			if(!message.empty()){
 				Utils::logMessage("Message recu de " + client->getNickname() + ": " + message);	// Log du message reçu
 				_commandHandler->executeCommand(client, message);	// Traiter la commande

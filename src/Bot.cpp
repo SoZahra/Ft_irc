@@ -776,7 +776,7 @@ void Bot::sayToChannel(const std::string& channelName, const std::string& messag
     channel->broadcast(":" + _nickname + "!" + _username + "@localhost PRIVMSG " + channelName + " :" + message, _botClient);
 
     // Log d'envoi de message
-    Utils::logMessage("Bot IRC a envoyé un message au canal " + channelName + ": " + message);
+    // Utils::logMessage("Bot IRC a envoyé un message au canal " + channelName + ": " + message);
 }
 
 /**
