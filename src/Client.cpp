@@ -153,32 +153,66 @@ ClientStatus Client::getStatus() const
  * Définit l'état du client
  * arg status Nouvel état
  */
+// void Client::setStatus(ClientStatus status)
+// {
+//     // Mettre à jour l'état
+//     _status = status;
+
+//     // Log de changement d'état
+//     std::string statusStr;
+//     switch (status) {
+//         case CONNECTING:
+//             statusStr = "CONNECTING";
+//             break;
+//         case PASSWORD_SENT:
+//             statusStr = "PASSWORD_SENT";
+//             break;
+//         case REGISTERED:
+//             statusStr = "REGISTERED";
+//             break;
+//         case DISCONNECTED:
+//             statusStr = "DISCONNECTED";
+//             break;
+//         default:
+//             statusStr = "UNKNOWN";
+//             break;
+//     }
+
+//     Utils::logMessage("Client " + _nickname + " a changé d'état: " + statusStr);
+// }
+
 void Client::setStatus(ClientStatus status)
 {
-    // Mettre à jour l'état
-    _status = status;
+	// S'assurer que le statut est valide
+	if (status < CONNECTING || status > DISCONNECTED) {
+		Utils::logMessage("DEBUG: Statut invalide dans Client::setStatus: " + Utils::toString(static_cast<int>(status)));
+		return;
+	}
 
-    // Log de changement d'état
-    std::string statusStr;
-    switch (status) {
-        case CONNECTING:
-            statusStr = "CONNECTING";
-            break;
-        case PASSWORD_SENT:
-            statusStr = "PASSWORD_SENT";
-            break;
-        case REGISTERED:
-            statusStr = "REGISTERED";
-            break;
-        case DISCONNECTED:
-            statusStr = "DISCONNECTED";
-            break;
-        default:
-            statusStr = "UNKNOWN";
-            break;
-    }
+	// Mettre à jour l'état
+	_status = status;
 
-    Utils::logMessage("Client " + _nickname + " a changé d'état: " + statusStr);
+	// Log de changement d'état
+	std::string statusStr;
+	switch (status) {
+		case CONNECTING:
+			statusStr = "CONNECTING";
+			break;
+		case PASSWORD_SENT:
+			statusStr = "PASSWORD_SENT";
+			break;
+		case REGISTERED:
+			statusStr = "REGISTERED";
+			break;
+		case DISCONNECTED:
+			statusStr = "DISCONNECTED";
+			break;
+		default:
+			statusStr = "UNKNOWN";
+			break;
+	}
+
+	Utils::logMessage("Client " + _nickname + " a changé d'état: " + statusStr);
 }
 
 /**

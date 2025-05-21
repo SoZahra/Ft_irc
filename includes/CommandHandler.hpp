@@ -81,31 +81,33 @@ enum IRCError {
     ERR_USERSDONTMATCH = 502        // :Cannot change mode for other users
 };
 
-class CommandHandler 
+class CommandHandler
 {
 private:
-    Server*                 _server;        // Pointeur vers le serveur
-    std::map<std::string, Command*> _commands; // Map des commandes disponibles
-    
-    // Méthodes privées
-    void registerCommands();                 // Enregistrement des commandes
-    std::vector<std::string> parseParams(const std::string& paramsStr); // Parse les paramètres
-    
+	Server*                 _server;        // Pointeur vers le serveur
+	std::map<std::string, Command*> _commands; // Map des commandes disponibles
+
+	// Méthodes privées
+	void registerCommands();                 // Enregistrement des commandes
+	std::vector<std::string> parseParams(const std::string& paramsStr); // Parse les paramètres
+
 public:
-    // Constructeur et destructeur
-    CommandHandler(Server* server);
-    ~CommandHandler();
-    
-    // Exécution de commandes
-    void executeCommand(Client* client, const std::string& message);
-    
-    // Formatage des réponses
-    std::string formatReply(int code, Client* client, const std::string& message);
-    std::string formatReply(int code, Client* client, const std::vector<std::string>& params);
-    
-    // Méthodes utilitaires
-    bool isValidChannelName(const std::string& name);
-    bool isValidNickname(const std::string& nickname);
+	// Constructeur et destructeur
+	CommandHandler(Server* server);
+	~CommandHandler();
+
+	// Exécution de commandes
+	void executeCommand(Client* client, const std::string& message);
+
+	// Formatage des réponses
+	std::string formatReply(int code, Client* client, const std::string& message);
+	std::string formatReply(int code, Client* client, const std::vector<std::string>& params);
+
+	// Méthodes utilitaires
+	bool isValidChannelName(const std::string& name);
+	bool isValidNickname(const std::string& nickname);
+
+	bool isCommandValid(const std::string& cmdName) const;
 };
 
 #endif

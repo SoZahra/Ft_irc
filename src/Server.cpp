@@ -341,7 +341,7 @@ void Server::setupServerSocket(){
 	memset(&serverAddr, 0, sizeof(serverAddr));	// Initialiser la structure d'adresse
 	serverAddr.sin_family = AF_INET;	// IPv4
 	serverAddr.sin_addr.s_addr = INADDR_ANY;	// Accepter toutes les adresses
-	serverAddr.sin_port = htons(_port);	// Port d'écoute
+	serverAddr.sin_port = htons(_port);	// Port d'ecoute
 	if(bind(_serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0){ //lire socket
 		close(_serverSocket);
 		throw std::runtime_error("Erreur lors de la liaison du socket serveur: " + std::string(strerror(errno)));
@@ -384,7 +384,7 @@ void Server::acceptNewConnection(){
 	_clients[clientFd] = client;	// Ajouter le client à la map des clients
 	_fds[_nfds].fd = clientFd;	// Ajouter le descripteur de fichier du client au tableau de descripteurs
 	_fds[_nfds].events = POLLIN;	// Événement de lecture
-	_nfds++;	// Incrémenter le nombre de descripteurs suivis par poll
+	_nfds++;	// Incrementer le nombre de descripteurs suivis par poll
 	Utils::logMessage("Nouvelle connexion accepte: " + client->toString());	// Log de la nouvelle connexion
 }
 
@@ -408,16 +408,35 @@ void Server::handleClientMessage(int clientFd){
 	while((pos = clientBuffer.find("\r\n")) != std::string::npos ||
 		(pos = clientBuffer.find("\n")) != std::string::npos){
 			std::string message = clientBuffer.substr(0, pos);	// Extraire le message
-			message = Utils::trim(message);	// gestion espaces
-
-			size_t nextPos = (clientBuffer[pos] == '\r' && pos + 1 < clientBuffer.size() && clientBuffer[pos + 1] == '\n') ? pos + 2 : pos + 1;
-			clientBuffer = clientBuffer.substr(nextPos);	// Mettre à jour le buffer du client
+			clientBuffer = clientBuffer.substr(pos + (clientBuffer[pos] == '\r' ? 2 : 1));
 			if(!message.empty()){
-				Utils::logMessage("Message recu de " + client->getNickname() + ": " + message);	// Log du message reçu
+				std::string cmdName;
+				size_t spacePos = message.find(' ');	// Trouver le premier espace
+				if(spacePos != std::string::npos){
+					cmdName = message.substr(0, spacePos);	// Extraire le nom de la commande
+				}else {
+					cmdName = message;	// Pas d'espace, le message est la commande
+				}
+				cmdName = Utils::toUpper(cmdName);	// Convertir le nom de la commande en majuscules
+				if(client->getStatus() == CONNECTING && cmdName != "PASS" && cmdName != "QUIT" && cmdName != "PING"){
+					client->sendMessage("464 : You must provide a valid password first with PASS command");	// Envoyer un message d'erreur");
+					continue;	// Sortir de la boucle si le client n'est pas enregistré
+				}
+				bool isValidCmd = _commandHandler->isCommandValid(cmdName);
+				if(isValidCmd){
+					Utils::logMessage("Message recu de " + client->getNickname() + ": " + message);	// Log du message reçu
+				}
 				_commandHandler->executeCommand(client, message);	// Traiter la commande
+			// message = Utils::trim(message);	// gestion espaces
+
+			// size_t nextPos = (clientBuffer[pos] == '\r' && pos + 1 < clientBuffer.size() && clientBuffer[pos + 1] == '\n') ? pos + 2 : pos + 1;
+			// clientBuffer = clientBuffer.substr(nextPos);	// Mettre à jour le buffer du client
+			// if(!message.empty()){
+			// 	Utils::logMessage("Message recu de " + client->getNickname() + ": " + message);	// Log du message reçu
+			// 	_commandHandler->executeCommand(client, message);	// Traiter la commande
 			}
 	}
 	client->clearBuffer();	// Vider le buffer du client
-	client->appendToBuffer(clientBuffer);	// Mettre à jour le buffer du client
+	client->appendToBuffer(clientBuffer);	// Mettre a jour le buffer du client
 	client->processMessages();
 }

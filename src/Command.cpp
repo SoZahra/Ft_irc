@@ -75,27 +75,25 @@ PassCommand::PassCommand(Server* server)
  */
 void PassCommand::execute(Client* client, const std::vector<std::string>& params)
 {
-    // Vérifier que le client n'est pas déjà enregistré
-    if (client->getStatus() != CONNECTING)
-    {
-        // Client déjà authentifié
-        client->sendReply("462 :You may not reregister");
-        return;
-    }
+	// Vérifier que le client n'est pas déjà enregistré
+	if (client->getStatus() != CONNECTING)
+	{
+		// Client déjà authentifié
+		client->sendReply("462 :You may not reregister");
+		return;
+	}
 
-    // Vérifier si le mot de passe est correct
-    if (params[0] != _server->getPassword())
-    {
-        // Mot de passe incorrect
-        client->sendReply("464 :Password incorrect");
-        return;
-    }
+	// Vérifier si le mot de passe est correct
+	if (params[0] != _server->getPassword())
+	{
+		// Mot de passe incorrect
+		client->sendReply("464 :Password incorrect");
+		return;
+	}
 
-    // Mettre à jour l'état du client
-    client->setStatus(PASSWORD_SENT);
-
-    // Log de succès
-    Utils::logMessage("Client " + Utils::toString(client->getFd()) + " a envoyé le mot de passe correct");
+	// Maj l'état du client
+	client->setStatus(PASSWORD_SENT);
+	Utils::logMessage("Client " + Utils::toString(client->getFd()) + " a envoyé le mot de passe correct");
 }
 
 // Implémentation de la commande NICK
@@ -570,7 +568,7 @@ void PrivmsgCommand::execute(Client* client, const std::vector<std::string>& par
         channel->broadcast(msg, client);
 
         // Log de message à un canal
-        Utils::logMessage("Client " + client->getNickname() + " a envoyé un message au canal " + target + ": " + message);
+        // Utils::logMessage("Client " + client->getNickname() + " a envoyé un message au canal " + target + message);
     }
     else
     {

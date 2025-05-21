@@ -87,17 +87,26 @@ std::vector<std::string> CommandHandler::parseParams(const std::string& paramsSt
 	// Vecteur des paramètres
 	std::vector<std::string> params;
 	// Si la chaîne est vide, retourner un vecteur vide
-	if (paramsStr.empty())
-		return params;
-	// Position actuelle dans la chaîne
+	if (paramsStr.empty()){
+		return params; }
 	size_t pos = 0;
 	// Tant qu'on n'a pas atteint la fin de la chaîne
-	while (pos < paramsStr.size())
+	while(pos < paramsStr.size() && isspace(paramsStr[pos]))
+	{
+		pos++;
+	}
+	while(pos < paramsStr.size())
 	{
 		// Si on trouve un caractère ':' au début d'un paramètre, tout le reste est un seul paramètre
 		if (paramsStr[pos] == ':')
 		{
-			params.push_back(paramsStr.substr(pos + 1));
+			std::string lastParam = paramsStr.substr(pos + 1);
+			if(!lastParam.empty())
+			{
+				params.push_back(lastParam);
+			}else{
+				params.push_back("");
+			}
 			break;
 		}
 		// Ignorer les espaces
@@ -116,9 +125,36 @@ std::vector<std::string> CommandHandler::parseParams(const std::string& paramsSt
 		{
 			pos++;
 		}
-		// Ajouter le paramètre au vecteur
 		params.push_back(paramsStr.substr(start, pos - start));
 	}
+
+	// while (pos < paramsStr.size())
+	// {
+	// 	// Si on trouve un caractère ':' au début d'un paramètre, tout le reste est un seul paramètre
+	// 	if (paramsStr[pos] == ':')
+	// 	{
+	// 		params.push_back(paramsStr.substr(pos + 1));
+	// 		break;
+	// 	}
+	// 	// Ignorer les espaces
+	// 	while (pos < paramsStr.size() && isspace(paramsStr[pos]))
+	// 	{
+	// 		pos++;
+	// 	}
+	// 	// Si on a atteint la fin de la chaîne, sortir
+	// 	if (pos >= paramsStr.size())
+	// 	{
+	// 		break;
+	// 	}
+	// 	// Début du paramètre
+	// 	size_t start = pos;
+	// 	while (pos < paramsStr.size() && !isspace(paramsStr[pos]))
+	// 	{
+	// 		pos++;
+	// 	}
+	// 	// Ajouter le paramètre au vecteur
+	// 	params.push_back(paramsStr.substr(start, pos - start));
+	// }
 
 	return params;
 }
@@ -130,67 +166,70 @@ std::vector<std::string> CommandHandler::parseParams(const std::string& paramsSt
  */
 void CommandHandler::executeCommand(Client* client, const std::string& message)
 {
-    // Vérifier que le client existe
-    if (!client)
-    {
-        return;
-    }
 
-    // Extraire le nom de la commande
-    std::string cmdName;
-    std::string params;
+	if (!client)
+		return;
 
-    // Trouver le premier espace
-    size_t spacePos = message.find(' ');
-    if (spacePos != std::string::npos)
-    {
-        // Extraire le nom de la commande et les paramètres
-        cmdName = message.substr(0, spacePos);
-        params = message.substr(spacePos + 1);
-    }
-    else
-    {
-        // Pas de paramètres
-        cmdName = message;
-        params = "";
-    }
+	// Extraire le nom de la commande
+	std::string cmdName;
+	std::string params;
 
-    // Convertir le nom de la commande en majuscules
-    cmdName = Utils::toUpper(cmdName);
+	// Trouver le premier espace
+	size_t spacePos = message.find(' ');
+	if (spacePos != std::string::npos)
+	{
+		// Extraire le nom de la commande et les paramètres
+		cmdName = message.substr(0, spacePos);
+		params = message.substr(spacePos + 1);
+	}
+	else
+	{
+		cmdName = message;
+		params = "";
+	}
 
-    // Rechercher la commande
-    std::map<std::string, Command*>::iterator it = _commands.find(cmdName);
-    if (it == _commands.end())
-    {
-        // Commande inconnue
-        client->sendReply(formatReply(ERR_UNKNOWNCOMMAND, client, cmdName + " :Unknown command"));
-        return;
-    }
+	cmdName = Utils::toUpper(cmdName);	// Convertir le nom de la commande en majuscules
 
-    // Récupérer la commande
-    Command* cmd = it->second;
+	// Rechercher la commande
+	std::map<std::string, Command*>::iterator it = _commands.find(cmdName);
+	if (it == _commands.end())
+	{
+		// Commande inconnue
+		client->sendReply(formatReply(ERR_UNKNOWNCOMMAND, client, cmdName + " :Unknown command"));
+		return;
+	}
 
-    // Vérifier si le client doit être enregistré pour utiliser cette commande
-    if (cmd->requiresRegistration() && !client->isRegistered())
-    {
-        // Client non enregistré
-        client->sendReply(formatReply(ERR_NOTREGISTERED, client, ":You have not registered"));
-        return;
-    }
+	// Récupérer la commande
+	Command* cmd = it->second;
 
-    // Parser les paramètres
-    std::vector<std::string> parsedParams = parseParams(params);
+	// Vérifier si le client doit être enregistré pour utiliser cette commande
+	if (cmd->requiresRegistration() && !client->isRegistered())
+	{
+		// Client non enregistré
+		client->sendReply(formatReply(ERR_NOTREGISTERED, client, ":You have not registered"));
+		return;
+	}
 
-    // Vérifier le nombre de paramètres
-    if (parsedParams.size() < cmd->getMinParams())
-    {
-        // Pas assez de paramètres
-        client->sendReply(formatReply(ERR_NEEDMOREPARAMS, client, cmdName + " :Not enough parameters"));
-        return;
-    }
+	//verifier si le mdp est bon
+	if(cmdName != "PASS" && client->getStatus() == CONNECTING)
+	{
+		client->sendReply(formatReply(ERR_NOTREGISTERED, client, ":You have not provided a valid password"));
+		return;
+	}
 
-    // Exécuter la commande
-    cmd->execute(client, parsedParams);
+	// Parser les paramètres
+	std::vector<std::string> parsedParams = parseParams(params);
+
+	// Vérifier le nombre de paramètres
+	if (parsedParams.size() < cmd->getMinParams())
+	{
+		// Pas assez de paramètres
+		client->sendReply(formatReply(ERR_NEEDMOREPARAMS, client, cmdName + " :Not enough parameters"));
+		return;
+	}
+
+	// Exécuter la commande
+	cmd->execute(client, parsedParams);
 }
 
 /**
@@ -255,28 +294,23 @@ std::string CommandHandler::formatReply(int code, Client* client, const std::vec
  */
 bool CommandHandler::isValidChannelName(const std::string& name)
 {
-    // Vérifier que le nom n'est pas vide
-    if (name.empty())
-    {
-        return false;
-    }
-
-    // Vérifier que le nom commence par # ou &
-    if (name[0] != '#' && name[0] != '&')
-    {
-        return false;
-    }
-
-    // Vérifier que le nom ne contient pas de caractères interdits
-    for (size_t i = 1; i < name.size(); ++i)
-    {
-        if (name[i] == ' ' || name[i] == ',' || name[i] == 7)
-        {
-            return false;
-        }
-    }
-
-    return true;
+	// Vérifier que le nom n'est pas vide
+	if (name.empty())
+		return false;
+	// Vérifier que le nom commence par # ou &
+	if (name[0] != '#' && name[0] != '&')
+	{
+		return false;
+	}
+	// Vérifier que le nom ne contient pas de caractères interdits
+	for (size_t i = 1; i < name.size(); ++i)
+	{
+		if (name[i] == ' ' || name[i] == ',' || name[i] == 7)
+		{
+			return false;
+		}
+	}
+	return true;
 }
 
 /**
@@ -286,28 +320,32 @@ bool CommandHandler::isValidChannelName(const std::string& name)
  */
 bool CommandHandler::isValidNickname(const std::string& nickname)
 {
-    // Vérifier que le pseudo n'est pas vide
-    if (nickname.empty())
-    {
-        return false;
-    }
+	// Vérifier que le pseudo n'est pas vide
+	if (nickname.empty())
+	{
+		return false;
+	}
 
-    // Vérifier que le pseudo ne commence pas par un chiffre ou un caractère spécial
-    if (isdigit(nickname[0]) || nickname[0] == '-' || nickname[0] == '#' || nickname[0] == '&')
-    {
-        return false;
-    }
+	// Vérifier que le pseudo ne commence pas par un chiffre ou un caractère spécial
+	if (isdigit(nickname[0]) || nickname[0] == '-' || nickname[0] == '#' || nickname[0] == '&')
+	{
+		return false;
+	}
 
-    // Vérifier que le pseudo ne contient pas de caractères interdits
-    for (size_t i = 0; i < nickname.size(); ++i)
-    {
-        if (nickname[i] == ' ' || nickname[i] == ',' || nickname[i] == '*' ||
-            nickname[i] == '?' || nickname[i] == '!' || nickname[i] == '@' ||
-            nickname[i] == '.' || nickname[i] == '$' || nickname[i] == ':')
-        {
-            return false;
-        }
-    }
+	// Vérifier que le pseudo ne contient pas de caractères interdits
+	for (size_t i = 0; i < nickname.size(); ++i)
+	{
+		if (nickname[i] == ' ' || nickname[i] == ',' || nickname[i] == '*' ||
+			nickname[i] == '?' || nickname[i] == '!' || nickname[i] == '@' ||
+			nickname[i] == '.' || nickname[i] == '$' || nickname[i] == ':')
+		{
+			return false;
+		}
+	}
 
-    return true;
+	return true;
+}
+
+bool  CommandHandler::isCommandValid(const std::string& cmdName) const{
+	return _commands.find(cmdName) != _commands.end();
 }
